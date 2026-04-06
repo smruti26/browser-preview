@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browser Demonstrate — How the Internet Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Clash+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #080c14;
+      --bg2: #0c1220;
+      --bg3: #111827;
+      --card: #141d2e;
+      --border: rgba(255, 255, 255, 0.07);
+      --border2: rgba(255, 255, 255, 0.14);
+      --text: #f0f4ff;
+      --text2: #8a9ab8;
+      --text3: #4a5870;
+      --heading: 'Clash Display', sans-serif;
+      --body: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 16px;
+      line-height: 1.65;
+      overflow-x: hidden
+    }
+
+    .cursor-dot {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4f9eff;
+      transform: translate(-50%, -50%);
+      transition: width .15s, height .15s, background .15s;
+      mix-blend-mode: screen
+    }
+
+    .cursor-ring {
+      position: fixed;
+      z-index: 9998;
+      pointer-events: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid rgba(79, 158, 255, 0.5);
+      transform: translate(-50%, -50%);
+      transition: all .08s ease
+    }
+
+    body.hovering .cursor-dot {
+      width: 14px;
+      height: 14px;
+      background: #fff
+    }
+
+    body.hovering .cursor-ring {
+      width: 44px;
+      height: 44px;
+      border-color: rgba(79, 158, 255, 0.8)
+    }
+
+    #hero {
+      position: relative;
+      height: 100vh;
+      min-height: 640px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      text-align: center;
+      padding: 2rem
+    }
+
+    #hero-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%
+    }
+
+    .hero-badge {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(79, 158, 255, 0.1);
+      border: 1px solid rgba(79, 158, 255, 0.3);
+      border-radius: 100px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #4f9eff;
+      letter-spacing: .08em;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp .7s ease .2s forwards
+    }
+
+    .hero-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4f9eff;
+      animation: blink 1.4s ease infinite
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .2
+      }
+    }
+
+    .hero-title {
+      position: relative;
+      z-index: 2;
+      font-family: var(--heading);
+      font-size: clamp(3rem, 9vw, 7.5rem);
+      font-weight: 700;
+      line-height: 1.0;
+      letter-spacing: -.04em;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp .7s ease .4s forwards
+    }
+
+    .hero-title .accent {
+      color: #4f9eff
+    }
+
+    .hero-title .sub {
+      display: block;
+      color: var(--text2);
+      font-weight: 400;
+      font-size: .55em;
+      letter-spacing: -.01em;
+      margin-top: .3em
+    }
+
+    .hero-desc {
+      position: relative;
+      z-index: 2;
+      max-width: 540px;
+      font-size: 18px;
+      color: var(--text2);
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: fadeUp .7s ease .6s forwards
+    }
+
+    .hero-cta-row {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      animation: fadeUp .7s ease .8s forwards
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: #4f9eff;
+      color: #080c14;
+      font-family: var(--body);
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: transform .15s, box-shadow .15s;
+      border: none;
+      cursor: pointer
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(79, 158, 255, 0.4)
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: transparent;
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: 8px;
+      text-decoration: none;
+      border: 1px solid var(--border2);
+      transition: background .15s, border-color .15s;
+      cursor: pointer
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.25)
+    }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: .12em;
+      animation: float 2.5s ease infinite
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateX(-50%) translateY(0)
+      }
+
+      50% {
+        transform: translateX(-50%) translateY(6px)
+      }
+    }
+
+    .hero-scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), transparent)
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    #topnav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(8, 12, 20, 0.9);
+      backdrop-filter: blur(20px) saturate(1.8);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px
+    }
+
+    .nav-logo {
+      font-family: var(--heading);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -.02em
+    }
+
+    .nav-logo span {
+      color: #4f9eff
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none
+    }
+
+    .nav-links::-webkit-scrollbar {
+      display: none
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text3);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: color .15s, background .15s;
+      position: relative
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05)
+    }
+
+    .nav-link.active {
+      color: var(--text)
+    }
+
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 12px;
+      right: 12px;
+      height: 2px;
+      background: var(--c, #4f9eff);
+      border-radius: 2px 2px 0 0
+    }
+
+    .nav-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--c, #4f9eff);
+      flex-shrink: 0
+    }
+
+    .section {
+      padding: 100px 2rem;
+      position: relative
+    }
+
+    .section-inner {
+      max-width: 1160px;
+      margin: 0 auto
+    }
+
+    .block-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 3.5rem
+    }
+
+    .block-meta {
+      flex: 1;
+      min-width: 280px
+    }
+
+    .block-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--accent, #4f9eff);
+      margin-bottom: .8rem
+    }
+
+    .block-kicker-num {
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px;
+      font-size: 10px
+    }
+
+    .block-title {
+      font-family: var(--heading);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -.03em;
+      color: var(--text);
+      margin-bottom: .75rem
+    }
+
+    .block-title em {
+      font-style: normal;
+      color: var(--accent, #4f9eff)
+    }
+
+    .block-subtitle {
+      font-size: 17px;
+      color: var(--text2);
+      max-width: 480px;
+      line-height: 1.7
+    }
+
+    .block-stats {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: flex-start
+    }
+
+    .stat-card {
+      padding: 16px 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-width: 110px;
+      transition: border-color .2s, transform .2s;
+      cursor: default
+    }
+
+    .stat-card:hover {
+      border-color: var(--accent, #4f9eff);
+      transform: translateY(-2px)
+    }
+
+    .stat-val {
+      font-family: var(--heading);
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--accent, #4f9eff);
+      margin-bottom: 4px
+    }
+
+    .stat-lbl {
+      font-size: 11.5px;
+      color: var(--text3);
+      font-weight: 500;
+      letter-spacing: .04em
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      align-items: start
+    }
+
+    @media(max-width:820px) {
+      .two-col {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .canvas-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 1/1;
+      transition: border-color .2s
+    }
+
+    .canvas-card:hover {
+      border-color: var(--border2)
+    }
+
+    .canvas-card canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important
+    }
+
+    .canvas-card-label {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      pointer-events: none;
+      letter-spacing: .08em
+    }
+
+    .detail-panel {
+      display: flex;
+      flex-direction: column;
+      gap: .85rem
+    }
+
+    .detail-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 16px 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color .18s, background .18s, transform .18s
+    }
+
+    .detail-item:hover {
+      border-color: var(--accent, #4f9eff);
+      background: rgba(79, 158, 255, 0.04);
+      transform: translateX(4px)
+    }
+
+    .detail-item.open {
+      border-color: var(--accent, #4f9eff);
+      background: rgba(79, 158, 255, 0.06)
+    }
+
+    .detail-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--accent, #4f9eff) 18%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-size: 11px;
+      color: var(--accent, #4f9eff);
+      font-family: var(--mono);
+      font-weight: 600;
+      letter-spacing: -.02em
+    }
+
+    .detail-body {
+      flex: 1;
+      min-width: 0
+    }
+
+    .detail-title {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+      line-height: 1.4
+    }
+
+    .detail-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.65;
+      display: none;
+      margin-top: 6px
+    }
+
+    .detail-item.open .detail-desc {
+      display: block
+    }
+
+    .detail-chevron {
+      flex-shrink: 0;
+      color: var(--text3);
+      font-size: 16px;
+      transition: transform .2s;
+      margin-top: 1px;
+      font-family: sans-serif
+    }
+
+    .detail-item.open .detail-chevron {
+      transform: rotate(90deg);
+      color: var(--accent, #4f9eff)
+    }
+
+    .demo-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px
+    }
+
+    .demo-title {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 16px
+    }
+
+    #packet-section {
+      padding: 60px 2rem;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border)
+    }
+
+    .pj-inner {
+      max-width: 1160px;
+      margin: 0 auto
+    }
+
+    .pj-heading {
+      font-family: var(--heading);
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -.025em;
+      margin-bottom: .4rem
+    }
+
+    .pj-sub {
+      font-size: 15px;
+      color: var(--text2);
+      margin-bottom: 1.8rem
+    }
+
+    #packet-canvas {
+      width: 100%;
+      height: 140px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      display: block
+    }
+
+    .section-divider {
+      max-width: 1160px;
+      margin: 0 auto;
+      height: 1px;
+      background: var(--border)
+    }
+
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 2px;
+      z-index: 200;
+      background: linear-gradient(90deg, #4f9eff, #3ecf8e);
+      width: 0%;
+      transition: width .1s
+    }
+
+    .tooltip {
+      position: fixed;
+      z-index: 500;
+      pointer-events: none;
+      padding: 8px 12px;
+      background: rgba(14, 22, 40, 0.96);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: var(--text);
+      max-width: 220px;
+      line-height: 1.5;
+      opacity: 0;
+      transition: opacity .15s;
+      font-family: var(--body)
+    }
+
+    footer {
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      text-align: center
+    }
+
+    .footer-logo {
+      font-family: var(--heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: .5rem
+    }
+
+    .footer-logo span {
+      color: #4f9eff
+    }
+
+    footer p {
+      font-size: 13px;
+      color: var(--text3)
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity .65s ease, transform .65s ease
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none
+    }
+
+    .s1 {
+      --accent: #a78bfa
+    }
+
+    .s2 {
+      --accent: #4f9eff
+    }
+
+    .s3 {
+      --accent: #5fe0c8
+    }
+
+    .s4 {
+      --accent: #ff6b6b
+    }
+
+    .s5 {
+      --accent: #3ecf8e
+    }
+
+    .s6 {
+      --accent: #f7c94b
+    }
+
+    .s7 {
+      --accent: #fb923c
+    }
+
+    .s8 {
+      --accent: #e879f9
+    }
+
+    .speed-meter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 8px
+    }
+
+    .speed-bar-track {
+      flex: 1;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden
+    }
+
+    .speed-bar-fill {
+      height: 100%;
+      border-radius: 3px
+    }
+
+    .speed-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: nowrap
+    }
+
+    .dns-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px
+    }
+
+    .dns-input {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+      transition: border-color .15s
+    }
+
+    .dns-input:focus {
+      border-color: #4f9eff
+    }
+
+    .dns-btn {
+      padding: 10px 18px;
+      background: #4f9eff;
+      color: #080c14;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+      white-space: nowrap;
+      font-family: var(--body)
+    }
+
+    .dns-btn:hover {
+      opacity: .85
+    }
+
+    .dns-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-height: 96px
+    }
+
+    .dns-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: opacity .3s, transform .3s;
+      font-family: var(--mono)
+    }
+
+    .dns-step.show {
+      opacity: 1;
+      transform: none
+    }
+
+    .tcp-state-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-bottom: 12px
+    }
+
+    .tcp-state-btn {
+      padding: 10px 6px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      text-align: center;
+      font-family: var(--body)
+    }
+
+    .tcp-state-btn:hover {
+      border-color: var(--accent, #ff6b6b);
+      color: var(--text)
+    }
+
+    .tcp-state-btn.active {
+      border-color: var(--accent, #ff6b6b);
+      background: rgba(255, 107, 107, 0.1);
+      color: var(--text)
+    }
+
+    .tab-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px
+    }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: var(--body)
+    }
+
+    .tab-btn.active {
+      background: rgba(247, 201, 75, 0.12);
+      border-color: #f7c94b;
+      color: #f7c94b
+    }
+
+    .tab-content {
+      display: none;
+      font-size: 13.5px;
+      color: var(--text2);
+      line-height: 1.75
+    }
+
+    .tab-content.active {
+      display: block
+    }
+
+    .tab-content strong {
+      color: var(--text)
+    }
+
+    .pipeline-stage {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      margin-bottom: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all .18s
+    }
+
+    .pipeline-stage:hover {
+      border-color: var(--accent, #e879f9);
+      background: rgba(232, 121, 249, 0.04)
+    }
+
+    .pipeline-stage.active {
+      border-color: var(--accent, #e879f9);
+      background: rgba(232, 121, 249, 0.07)
+    }
+
+    .ps-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: rgba(232, 121, 249, 0.1);
+      color: #e879f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      flex-shrink: 0
+    }
+
+    .pipeline-stage.active .ps-num {
+      background: rgba(232, 121, 249, 0.22)
+    }
+
+    .ps-text {
+      flex: 1
+    }
+
+    .ps-title {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text)
+    }
+
+    .ps-desc {
+      font-size: 12.5px;
+      color: var(--text2);
+      margin-top: 3px;
+      display: none;
+      line-height: 1.55
+    }
+
+    .pipeline-stage.active .ps-desc {
+      display: block
+    }
+
+    .ps-time {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      white-space: nowrap
+    }
+
+    code.inline {
+      font-family: var(--mono);
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: var(--accent, #4f9eff)
+    }
+  </style>
+</head>
+
+<body>
+  <div class="cursor-dot" id="cdot"></div>
+  <div class="cursor-ring" id="cring"></div>
+  <div id="progress-bar"></div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <!-- HERO -->
+  <section id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-badge"><span class="hero-badge-dot"></span>browser demonstrate · interactive guide</div>
+    <h1 class="hero-title">
+      How the <span class="accent">Internet</span> Works
+      <span class="sub">From google.com → pixels on your screen</span>
+    </h1>
+    <p class="hero-desc">In 200ms your browser performs hundreds of remarkable operations. This is the complete map —
+      all 8 blocks, every hop, every byte explained interactively.</p>
+    <div class="hero-cta-row">
+      <a href="#packet-section" class="btn-primary">Start the journey ↓</a>
+      <a href="#block1" class="btn-ghost">Browse all 8 blocks</a>
+    </div>
+    <div class="hero-scroll"><span>scroll to explore</span>
+      <div class="hero-scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- NAV -->
+  <nav id="topnav">
+    <div class="nav-logo">browser<span>demo</span></div>
+    <div class="nav-links">
+      <a class="nav-link" href="#block1" style="--c:#a78bfa"><span class="nav-dot"
+          style="background:#a78bfa"></span>First Move</a>
+      <a class="nav-link" href="#block2" style="--c:#4f9eff"><span class="nav-dot"
+          style="background:#4f9eff"></span>DNS</a>
+      <a class="nav-link" href="#block3" style="--c:#5fe0c8"><span class="nav-dot"
+          style="background:#5fe0c8"></span>Physical</a>
+      <a class="nav-link" href="#block4" style="--c:#ff6b6b"><span class="nav-dot"
+          style="background:#ff6b6b"></span>TCP</a>
+      <a class="nav-link" href="#block5" style="--c:#3ecf8e"><span class="nav-dot"
+          style="background:#3ecf8e"></span>TLS</a>
+      <a class="nav-link" href="#block6" style="--c:#f7c94b"><span class="nav-dot"
+          style="background:#f7c94b"></span>HTTP</a>
+      <a class="nav-link" href="#block7" style="--c:#fb923c"><span class="nav-dot"
+          style="background:#fb923c"></span>Response</a>
+      <a class="nav-link" href="#block8" style="--c:#e879f9"><span class="nav-dot"
+          style="background:#e879f9"></span>Render</a>
+    </div>
+  </nav>
+
+  <!-- PACKET JOURNEY -->
+  <section id="packet-section">
+    <div class="pj-inner reveal">
+      <h2 class="pj-heading">The Complete Packet Journey</h2>
+      <p class="pj-sub">Watch your request travel from laptop to Google's server and back — hover each node to learn
+        more</p>
+      <canvas id="packet-canvas"></canvas>
+    </div>
+  </section>
+
+  <!-- BLOCK 1 -->
+  <section id="block1" class="section s1">
+    <div class="section-inner">
+      <div class="block-header reveal">
+        <div class="block-meta">
+          <div class="block-kicker"><span class="block-kicker-num">01 / 08</span> Browser's First Move</div>
+          <h2 class="block-title">Before a single byte<br><em>leaves your device</em></h2>
+          <p class="block-subtitle">The browser silently runs a decision tree — HSTS checks, cache hits, service workers
+            — before any network call fires.</p>
+        </div>
+        <div class="block-stats">
+          <div class="stat-card">
+            <div class="stat-val">~0ms</div>
+            <div class="stat-lbl">Cache hit cost</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">137K</div>
+            <div class="stat-lbl">HSTS preload domains</div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col reveal">
+        <div class="canvas-card"><canvas id="c1"></canvas>
+          <div class="canvas-card-label">decision tree · live</div>
+        </div>
+        <div class="detail-panel">
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">01</div>
+            <div class="detail-body">
+              <div class="detail-title">URL Parsing</div>
+              <div class="detail-desc">The browser splits the URL into scheme (https), host (google.com), path, query
+                string, and fragment. Each part is validated and canonicalised before anything else happens.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">02</div>
+            <div class="detail-body">
+              <div class="detail-title">HSTS Preload Check</div>
+              <div class="detail-desc">Before DNS, the browser checks its built-in HSTS preload list. If the domain is
+                on it, HTTP is silently upgraded to HTTPS — no redirect round trip, no network call wasted.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">03</div>
+            <div class="detail-body">
+              <div class="detail-title">DNS Cache Lookup</div>
+              <div class="detail-desc">The browser maintains its own DNS cache separate from the OS. A hit here skips
+                the entire resolution chain — no resolver, no root server, no TLD server involved.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">04</div>
+            <div class="detail-body">
+              <div class="detail-title">HTTP Cache Check</div>
+              <div class="detail-desc">If a fresh response is cached (memory or disk), it's returned immediately.
+                Cache-Control, ETag, and Last-Modified headers govern freshness. A cache hit = zero network bytes.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">05</div>
+            <div class="detail-body">
+              <div class="detail-title">Service Worker Intercept</div>
+              <div class="detail-desc">If a Service Worker is registered for this origin, it receives a fetch event and
+                can respond from cache, the network, or custom logic — before the browser makes any request.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="section-divider"></div>
+
+  <!-- BLOCK 2 -->
+  <section id="block2" class="section s2">
+    <div class="section-inner">
+      <div class="block-header reveal">
+        <div class="block-meta">
+          <div class="block-kicker"><span class="block-kicker-num">02 / 08</span> DNS</div>
+          <h2 class="block-title">The internet's<br><em>phone book</em></h2>
+          <p class="block-subtitle">google.com → 142.250.80.46. DNS translates human names into machine-routable
+            addresses via a global distributed hierarchy.</p>
+        </div>
+        <div class="block-stats">
+          <div class="stat-card">
+            <div class="stat-val">13</div>
+            <div class="stat-lbl">Root server clusters</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">~20ms</div>
+            <div class="stat-lbl">Typical resolution</div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col reveal">
+        <div class="detail-panel">
+          <div class="demo-panel">
+            <div class="demo-title">▶ interactive dns lookup simulator</div>
+            <div class="dns-input-row">
+              <input class="dns-input" id="dns-input" value="google.com" placeholder="Enter a domain…" />
+              <button class="dns-btn" onclick="runDNS()">Resolve →</button>
+            </div>
+            <div class="dns-steps" id="dns-steps"></div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">REC</div>
+            <div class="detail-body">
+              <div class="detail-title">DNS Record Types</div>
+              <div class="detail-desc"><strong>A</strong> → IPv4 address · <strong>AAAA</strong> → IPv6 ·
+                <strong>CNAME</strong> → alias · <strong>MX</strong> → mail server · <strong>TXT</strong> → arbitrary
+                text (SPF, DKIM) · <strong>NS</strong> → nameserver delegation · <strong>SOA</strong> → zone authority
+              </div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">DoH</div>
+            <div class="detail-body">
+              <div class="detail-title">Encrypted DNS — DoH & DoT</div>
+              <div class="detail-desc">Standard DNS is plaintext — your ISP sees every domain you look up.
+                DNS-over-HTTPS (port 443) and DNS-over-TLS (port 853) encrypt lookups, hiding them from network
+                observers.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+        </div>
+        <div class="canvas-card"><canvas id="c2"></canvas>
+          <div class="canvas-card-label">recursive resolution · animated</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="section-divider"></div>
+
+  <!-- BLOCK 3 -->
+  <section id="block3" class="section s3">
+    <div class="section-inner">
+      <div class="block-header reveal">
+        <div class="block-meta">
+          <div class="block-kicker"><span class="block-kicker-num">03 / 08</span> Physical Journey</div>
+          <h2 class="block-title">WiFi → ISP →<br><em>Backbone</em></h2>
+          <p class="block-subtitle">The packet physically travels across the planet. Radio waves, fiber optics, and BGP
+            routing work together across milliseconds.</p>
+        </div>
+        <div class="block-stats">
+          <div class="stat-card">
+            <div class="stat-val">900+</div>
+            <div class="stat-lbl">Internet Exchange Points</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">~4ms</div>
+            <div class="stat-lbl">WiFi round trip</div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col reveal">
+        <div class="canvas-card"><canvas id="c3"></canvas>
+          <div class="canvas-card-label">packet path · animated</div>
+        </div>
+        <div class="detail-panel">
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">📡</div>
+            <div class="detail-body">
+              <div class="detail-title">802.11 WiFi</div>
+              <div class="detail-desc">Your device broadcasts on a licensed channel (2.4 GHz or 5 GHz). The access point
+                ACKs every frame. OFDM modulation encodes data in orthogonal subcarriers to resist multipath
+                interference.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">NAT</div>
+            <div class="detail-body">
+              <div class="detail-title">NAT — Your Hidden Address</div>
+              <div class="detail-desc">Your router replaces your private 192.168.x.x source address with its public IP
+                before forwarding. Return traffic is mapped back via a connection table. The public internet never sees
+                your device's real address.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">BGP</div>
+            <div class="detail-body">
+              <div class="detail-title">BGP — Border Gateway Protocol</div>
+              <div class="detail-desc">~70,000 autonomous systems advertise their IP prefixes to each other via BGP.
+                Your packet follows the best-path announced routes, potentially traversing multiple countries in under
+                30ms.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="demo-panel" style="margin-top:0">
+            <div class="demo-title">▶ latency by hop</div>
+            <div id="hop-meters"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="section-divider"></div>
+
+  <!-- BLOCK 4 -->
+  <section id="block4" class="section s4">
+    <div class="section-inner">
+      <div class="block-header reveal">
+        <div class="block-meta">
+          <div class="block-kicker"><span class="block-kicker-num">04 / 08</span> TCP</div>
+          <h2 class="block-title">The <em>reliable</em><br>pipe</h2>
+          <p class="block-subtitle">IP delivers packets with no guarantees. TCP adds sequencing, acknowledgement, and
+            retransmission — paying a round-trip handshake as the entry fee.</p>
+        </div>
+        <div class="block-stats">
+          <div class="stat-card">
+            <div class="stat-val">1 RTT</div>
+            <div class="stat-lbl">Handshake cost</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">3-way</div>
+            <div class="stat-lbl">SYN · SYN-ACK · ACK</div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col reveal">
+        <div class="detail-panel">
+          <div class="demo-panel">
+            <div class="demo-title">▶ step through the tcp handshake</div>
+            <div class="tcp-state-grid" id="tcp-steps">
+              <button class="tcp-state-btn active" onclick="setTCP(0)">CLOSED</button>
+              <button class="tcp-state-btn" onclick="setTCP(1)">SYN →</button>
+              <button class="tcp-state-btn" onclick="setTCP(2)">← SYN-ACK</button>
+              <button class="tcp-state-btn" onclick="setTCP(3)">ACK →</button>
+              <button class="tcp-state-btn" onclick="setTCP(4)">ESTABLISHED</button>
+              <button class="tcp-state-btn" onclick="setTCP(5)">DATA FLOWS</button>
+            </div>
+            <div id="tcp-explain"
+              style="font-size:13.5px;color:var(--text2);padding:14px;background:var(--bg);border-radius:8px;line-height:1.75;min-height:76px;border:1px solid var(--border)">
+            </div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">SEQ</div>
+            <div class="detail-body">
+              <div class="detail-title">Sequence Numbers & ACKs</div>
+              <div class="detail-desc">Every byte sent has a sequence number. The receiver sends ACKs confirming
+                delivery. Gaps trigger retransmission. This guarantees ordered, loss-free delivery regardless of
+                underlying IP behaviour.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">CC</div>
+            <div class="detail-body">
+              <div class="detail-title">Congestion Control</div>
+              <div class="detail-desc">TCP starts slow, increases the window exponentially (slow start), then backs off
+                on packet loss (AIMD). This cooperative mechanism prevents any single connection from overwhelming the
+                network.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+        </div>
+        <div class="canvas-card"><canvas id="c4"></canvas>
+          <div class="canvas-card-label">handshake · driven by steps above</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="section-divider"></div>
+
+  <!-- BLOCK 5 -->
+  <section id="block5" class="section s5">
+    <div class="section-inner">
+      <div class="block-header reveal">
+        <div class="block-meta">
+          <div class="block-kicker"><span class="block-kicker-num">05 / 08</span> TLS</div>
+          <h2 class="block-title">Locking<br><em>the door</em></h2>
+          <p class="block-subtitle">Certificates prove identity. ECDHE establishes a shared secret without transmitting
+            it. TLS 1.3 does all this in a single round trip.</p>
+        </div>
+        <div class="block-stats">
+          <div class="stat-card">
+            <div class="stat-val">1 RTT</div>
+            <div class="stat-lbl">TLS 1.3 handshake</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">90%+</div>
+            <div class="stat-lbl">Web now HTTPS</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">$0</div>
+            <div class="stat-lbl">Let's Encrypt certs</div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col reveal">
+        <div class="canvas-card"><canvas id="c5"></canvas>
+          <div class="canvas-card-label">certificate chain · key exchange</div>
+        </div>
+        <div class="detail-panel">
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">X.5</div>
+            <div class="detail-body">
+              <div class="detail-title">X.509 Certificate Chain</div>
+              <div class="detail-desc">The server presents a certificate signed by an intermediate CA, which is signed
+                by a root CA baked into your OS. Your browser walks this chain verifying each signature until it reaches
+                a trusted root.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">LE</div>
+            <div class="detail-body">
+              <div class="detail-title">Let's Encrypt & ACME</div>
+              <div class="detail-desc">Let's Encrypt automated certificate issuance via the ACME protocol. HTTP-01
+                challenge: the CA gives you a token; you serve it at /.well-known/acme-challenge/. Certs are valid 90
+                days and auto-renew.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">EC</div>
+            <div class="detail-body">
+              <div class="detail-title">ECDHE Key Exchange</div>
+              <div class="detail-desc">Both sides pick random private keys, compute public keys on an elliptic curve,
+                and exchange them. Each can compute the same shared secret — but an eavesdropper who captures both
+                public keys cannot. This is forward secrecy.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">0RT</div>
+            <div class="detail-body">
+              <div class="detail-title">0-RTT Session Resumption</div>
+              <div class="detail-desc">On reconnection to a known server, TLS 1.3 allows sending encrypted data in the
+                very first message — zero round-trip cost. A session ticket from the previous connection seeds the key
+                derivation.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="section-divider"></div>
+
+  <!-- BLOCK 6 -->
+  <section id="block6" class="section s6">
+    <div class="section-inner">
+      <div class="block-header reveal">
+        <div class="block-meta">
+          <div class="block-kicker"><span class="block-kicker-num">06 / 08</span> HTTP</div>
+          <h2 class="block-title">The <em>language</em><br>of the web</h2>
+          <p class="block-subtitle">30 years of evolution: text-based HTTP/1.1 → multiplexed HTTP/2 → UDP-based HTTP/3.
+            Each version solved a specific bottleneck.</p>
+        </div>
+        <div class="block-stats">
+          <div class="stat-card">
+            <div class="stat-val">HTTP/3</div>
+            <div class="stat-lbl">Current latest</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">QUIC</div>
+            <div class="stat-lbl">UDP-based transport</div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col reveal">
+        <div class="detail-panel">
+          <div class="demo-panel">
+            <div class="demo-title">▶ compare http versions</div>
+            <div class="tab-row">
+              <button class="tab-btn active" onclick="switchTab(this,'http1')">HTTP/1.1</button>
+              <button class="tab-btn" onclick="switchTab(this,'http2')">HTTP/2</button>
+              <button class="tab-btn" onclick="switchTab(this,'http3')">HTTP/3</button>
+            </div>
+            <div class="tab-content active" id="tab-http1"><strong>Text-based protocol.</strong> One request per
+              connection. Persistent connections added in 1.1, but head-of-line blocking means request 2 waits for
+              request 1 to complete. Browsers opened 6 parallel TCP connections per domain as a workaround. Headers sent
+              uncompressed, same cookies repeated every request.</div>
+            <div class="tab-content" id="tab-http2"><strong>Binary framing + stream multiplexing.</strong> Many
+              concurrent requests over a single TCP connection — no queuing. HPACK compresses headers using a static
+              table and Huffman encoding. Server Push lets the server proactively send assets. Widely adopted since
+              2015.</div>
+            <div class="tab-content" id="tab-http3"><strong>QUIC replaces TCP entirely.</strong> Built on UDP.
+              Connection IDs survive IP changes — switching from WiFi to 4G keeps the session alive. Each stream is
+              independent so one lost packet doesn't stall others. 0-RTT reconnects. Encrypted by default at the
+              transport layer.</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">HOL</div>
+            <div class="detail-body">
+              <div class="detail-title">Head-of-Line Blocking Explained</div>
+              <div class="detail-desc">HTTP/1.1: one outstanding request per TCP connection means slow request 1 blocks
+                all others. HTTP/2 solved this at the HTTP layer. HTTP/3 solved the remaining TCP-level version by
+                moving to QUIC/UDP where streams are truly independent.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+        </div>
+        <div class="canvas-card"><canvas id="c6"></canvas>
+          <div class="canvas-card-label">stream multiplexing · animated</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="section-divider"></div>
+
+  <!-- BLOCK 7 -->
+  <section id="block7" class="section s7">
+    <div class="section-inner">
+      <div class="block-header reveal">
+        <div class="block-meta">
+          <div class="block-kicker"><span class="block-kicker-num">07 / 08</span> Response & Cache</div>
+          <h2 class="block-title">Bytes <em>arrive</em>,<br>cache remembers</h2>
+          <p class="block-subtitle">The server streams. The browser parses before the file finishes downloading. Smart
+            caching means most bytes are never requested twice.</p>
+        </div>
+        <div class="block-stats">
+          <div class="stat-card">
+            <div class="stat-val">~26%</div>
+            <div class="stat-lbl">Brotli vs gzip saving</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">304</div>
+            <div class="stat-lbl">Not Modified = no body</div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col reveal">
+        <div class="canvas-card"><canvas id="c7"></canvas>
+          <div class="canvas-card-label">streaming DOM construction</div>
+        </div>
+        <div class="detail-panel">
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">▶</div>
+            <div class="detail-body">
+              <div class="detail-title">Streaming Response</div>
+              <div class="detail-desc">The browser doesn't wait for the full HTML. As bytes arrive, the parser builds
+                the DOM incrementally. Sub-resource requests (CSS, JS, images) are dispatched the moment their tags are
+                parsed — the preload scanner runs ahead.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">BR</div>
+            <div class="detail-body">
+              <div class="detail-title">Brotli vs Gzip</div>
+              <div class="detail-desc">Brotli uses a static dictionary of 120,000+ common web strings (HTML tags, JS
+                keywords, CSS properties). This gives it a 15–26% size advantage over gzip on text assets. Check <code
+                  class="inline">Content-Encoding: br</code> in DevTools.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">CC</div>
+            <div class="detail-body">
+              <div class="detail-title">Cache-Control Deep Dive</div>
+              <div class="detail-desc"><code class="inline">max-age=31536000, immutable</code> — cache forever, use for
+                content-hashed assets. <code class="inline">no-cache</code> — always revalidate with ETag before using.
+                <code class="inline">no-store</code> — never write to cache, ever. <code
+                  class="inline">stale-while-revalidate</code> — serve stale instantly, refresh in background.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+          <div class="detail-item" onclick="toggleDetail(this)">
+            <div class="detail-icon">SW</div>
+            <div class="detail-body">
+              <div class="detail-title">Service Worker Cache</div>
+              <div class="detail-desc">A Service Worker intercepts every fetch from a separate thread. Implement
+                cache-first, network-first, stale-while-revalidate, or any custom strategy. This gives web apps full
+                offline capability.</div>
+            </div>
+            <div class="detail-chevron">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="section-divider"></div>
+
+  <!-- BLOCK 8 -->
+  <section id="block8" class="section s8">
+    <div class="section-inner">
+      <div class="block-header reveal">
+        <div class="block-meta">
+          <div class="block-kicker"><span class="block-kicker-num">08 / 08</span> Browser Renders</div>
+          <h2 class="block-title">Bytes become<br><em>pixels</em></h2>
+          <p class="block-subtitle">Five pipeline stages from HTML tokenisation to GPU compositing. Every frame must
+            complete in 16ms. The pipeline explains why some CSS is free and other CSS is expensive.</p>
+        </div>
+        <div class="block-stats">
+          <div class="stat-card">
+            <div class="stat-val">16ms</div>
+            <div class="stat-lbl">Budget per frame at 60fps</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">5</div>
+            <div class="stat-lbl">Pipeline stages</div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col reveal">
+        <div class="detail-panel">
+          <div class="pipeline-stage active" id="ps0" onclick="setPipeline(0)">
+            <div class="ps-num">01</div>
+            <div class="ps-text">
+              <div class="ps-title">Parse HTML → DOM</div>
+              <div class="ps-desc">Bytes → tokens → nodes. The HTML parser is incremental and fault-tolerant. The
+                preload scanner runs ahead discovering CSS, JS, and images to fetch in parallel with parsing.</div>
+            </div>
+            <div class="ps-time">~5ms</div>
+          </div>
+          <div class="pipeline-stage" id="ps1" onclick="setPipeline(1)">
+            <div class="ps-num">02</div>
+            <div class="ps-text">
+              <div class="ps-title">Parse CSS → CSSOM</div>
+              <div class="ps-desc">CSS is render-blocking — the browser cannot paint until all CSS is parsed. The CSSOM
+                is a separate tree mapping selectors to their computed style values.</div>
+            </div>
+            <div class="ps-time">~2ms</div>
+          </div>
+          <div class="pipeline-stage" id="ps2" onclick="setPipeline(2)">
+            <div class="ps-num">03</div>
+            <div class="ps-text">
+              <div class="ps-title">DOM + CSSOM → Render Tree</div>
+              <div class="ps-desc">DOM and CSSOM are merged. display:none nodes are excluded. Each visible node gets its
+                computed styles attached. This is the render tree — only what's actually visible.</div>
+            </div>
+            <div class="ps-time">~1ms</div>
+          </div>
+          <div class="pipeline-stage" id="ps3" onclick="setPipeline(3)">
+            <div class="ps-num">04</div>
+            <div class="ps-text">
+              <div class="ps-title">Layout — exact geometry</div>
+              <div class="ps-desc">The browser calculates exact pixel coordinates for every element. Changing width,
+                height, margin, or font-size triggers a full reflow. LayoutNG is Chrome's modern constraint-based layout
+                engine.</div>
+            </div>
+            <div class="ps-time">~3ms</div>
+          </div>
+          <div class="pipeline-stage" id="ps4" onclick="setPipeline(4)">
+            <div class="ps-num">05</div>
+            <div class="ps-text">
+              <div class="ps-title">Paint → Composite → GPU</div>
+              <div class="ps-desc">Layout → display list of draw commands → promoted layers composited on the GPU
+                thread. transform and opacity animate on the compositor, never triggering layout or paint. That's why
+                they're "free."</div>
+            </div>
+            <div class="ps-time">~2ms</div>
+          </div>
+        </div>
+        <div class="canvas-card"><canvas id="c8"></canvas>
+          <div class="canvas-card-label">render pipeline · click a stage</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">browser<span>demo</span></div>
+    <p>18 posts · 8 blocks · one journey · every byte explained</p>
+    <p style="margin-top:.4rem">From pressing Enter to pixels on your screen</p>
+  </footer>
+
+  <script>
+    const PI2 = Math.PI * 2;
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const rand = (a, b) => a + Math.random() * (b - a);
+    const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+    function qbez(p0, p1, p2, t) { return (1 - t) * (1 - t) * p0 + 2 * (1 - t) * t * p1 + t * t * p2 }
+    function sc(el) {
+      const p = el.parentElement, dpr = window.devicePixelRatio || 1;
+      const w = p.clientWidth, h = p.clientHeight;
+      el.width = w * dpr; el.height = h * dpr; el.style.width = w + 'px'; el.style.height = h + 'px';
+      const ctx = el.getContext('2d'); ctx.scale(dpr, dpr); return { ctx, w, h };
+    }
+    function rr(ctx, x, y, w, h, r = 6) {
+      ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+      ctx.arcTo(x + w, y, x + w, y + r, r); ctx.lineTo(x + w, y + h - r);
+      ctx.arcTo(x + w, y + h, x + w - r, y + h, r); ctx.lineTo(x + r, y + h);
+      ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r);
+      ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+    }
+
+    // cursor
+    const dot = document.getElementById('cdot'), ring = document.getElementById('cring');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; dot.style.left = mx + 'px'; dot.style.top = my + 'px'; });
+    (function ac() { rx = lerp(rx, mx, .14); ry = lerp(ry, my, .14); ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(ac); })();
+    document.querySelectorAll('a,button,.detail-item,.pipeline-stage,.stat-card').forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+    });
+
+    // scroll progress
+    const pb = document.getElementById('progress-bar');
+    window.addEventListener('scroll', () => { pb.style.width = (window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100) + '%'; });
+
+    // reveal
+    const ro = new IntersectionObserver(e => e.forEach(x => { if (x.isIntersecting) x.target.classList.add('visible'); }), { threshold: .1 });
+    document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
+
+    // active nav
+    const nls = document.querySelectorAll('.nav-link');
+    const so = new IntersectionObserver(e => e.forEach(x => {
+      if (x.isIntersecting) { nls.forEach(n => n.classList.remove('active')); const a = document.querySelector(`.nav-link[href="#${x.target.id}"]`); if (a) a.classList.add('active'); }
+    }), { threshold: .35 });
+    document.querySelectorAll('section[id]').forEach(s => so.observe(s));
+
+    // toggle detail
+    function toggleDetail(el) {
+      const was = el.classList.contains('open');
+      el.closest('.detail-panel')?.querySelectorAll('.detail-item').forEach(i => i.classList.remove('open'));
+      if (!was) el.classList.add('open');
+    }
+
+    // DNS simulator
+    const dnsMsg = [
+      { col: '#4f9eff', icon: '🌐', bg: 'rgba(79,158,255,0.1)', msg: 'Browser DNS cache: miss. Initiating recursive lookup…' },
+      { col: '#a78bfa', icon: '⚡', bg: 'rgba(167,139,250,0.1)', msg: 'Querying recursive resolver (8.8.8.8)…' },
+      { col: '#5fe0c8', icon: '🌳', bg: 'rgba(95,224,200,0.1)', msg: 'Resolver → Root NS: "who handles .com?"' },
+      { col: '#f7c94b', icon: '📂', bg: 'rgba(247,201,75,0.1)', msg: '.com TLD server: "ask a.gtld-servers.net"' },
+      { col: '#3ecf8e', icon: '✅', bg: 'rgba(62,207,142,0.1)', msg: 'Authoritative NS returns A record → 142.250.80.46' },
+      { col: '#fb923c', icon: '💾', bg: 'rgba(251,146,60,0.1)', msg: 'Cached with TTL=300s. IP returned to browser!' },
+    ];
+    function runDNS() {
+      const dom = document.getElementById('dns-input').value || 'google.com';
+      const el = document.getElementById('dns-steps'); el.innerHTML = '';
+      dnsMsg.forEach((m, i) => {
+        const d = document.createElement('div'); d.className = 'dns-step';
+        d.style.background = m.bg;
+        d.innerHTML = `<span style="font-size:15px">${m.icon}</span><span style="color:${m.col};font-size:12px">${m.msg.replace('google.com', dom)}</span>`;
+        el.appendChild(d); setTimeout(() => d.classList.add('show'), i * 370);
+      });
+    }
+    runDNS();
+
+    // hop meters
+    const hops2 = [
+      { label: 'WiFi → Router', ms: 4, col: '#5fe0c8' },
+      { label: 'Router → ISP', ms: 8, col: '#4f9eff' },
+      { label: 'ISP → IXP', ms: 18, col: '#a78bfa' },
+      { label: 'IXP → Google Edge', ms: 28, col: '#3ecf8e' },
+    ];
+    const hme = document.getElementById('hop-meters');
+    hops2.forEach(h => {
+      hme.innerHTML += `<div class="speed-meter"><div style="width:130px;font-size:12px;color:var(--text2);flex-shrink:0;font-family:var(--mono)">${h.label}</div><div class="speed-bar-track"><div class="speed-bar-fill" style="width:${(h.ms / 30) * 100}%;background:${h.col}"></div></div><div class="speed-label" style="color:${h.col}">~${h.ms}ms</div></div>`;
+    });
+
+    // TCP
+    const tcpTxt = [
+      'Both sides are CLOSED. No connection exists. The client wants to connect to the server on port 443.',
+      '→ Client sends SYN with a random initial sequence number (ISN). "I want to connect. I will start counting from X."',
+      '← Server responds SYN-ACK: acknowledges client ISN and sends its own ISN. "Got X. I will count from Y."',
+      '→ Client sends ACK: "Got your Y." This completes the 3-way handshake. One full RTT has elapsed.',
+      'Connection ESTABLISHED. Both sides agreed on sequence numbers. Encrypted data can now flow.',
+      'HTTP/TLS data flows inside the established TCP connection. Sequence numbers track every byte; ACKs confirm delivery.',
+    ];
+    let tcpState = 0;
+    function setTCP(n) {
+      tcpState = n;
+      document.querySelectorAll('.tcp-state-btn').forEach((b, i) => b.classList.toggle('active', i === n));
+      document.getElementById('tcp-explain').textContent = tcpTxt[n];
+    }
+    setTCP(0);
+
+    // HTTP tabs
+    function switchTab(btn, id) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active'); document.getElementById('tab-' + id).classList.add('active');
+    }
+
+    // Pipeline
+    let renderActive = 0;
+    function setPipeline(n) {
+      renderActive = n;
+      for (let i = 0; i < 5; i++)document.getElementById('ps' + i)?.classList.toggle('active', i === n);
+    }
+    let lastPI = 0;
+    document.querySelectorAll('.pipeline-stage').forEach(el => el.addEventListener('click', () => lastPI = Date.now()));
+    setInterval(() => { if (Date.now() - lastPI > 4000) { renderActive = (renderActive + 1) % 5; for (let i = 0; i < 5; i++)document.getElementById('ps' + i)?.classList.toggle('active', i === renderActive); } }, 1400);
+
+    // tooltip
+    const ttip = document.getElementById('tooltip');
+    const hopTips = [
+      'Your device. Private IP assigned by DHCP. Never visible on the public internet.',
+      'Performs NAT: replaces 192.168.x.x with your public IP. Runs DHCP for local network.',
+      'Your Internet Service Provider. Connects you to the backbone via fiber or cable.',
+      'Internet Exchange Point — where ISPs peer directly, reducing latency and transit cost.',
+      'Googles nearest edge server, found via Anycast routing. Handles TLS termination.',
+      'The actual backend server. Processes your request and sends the response.',
+    ];
+
+    // HERO CANVAS
+    (function () {
+      const el = document.getElementById('hero-canvas');
+      let ctx, W, H, nodes = [];
+      function setup() {
+        W = el.offsetWidth; H = el.offsetHeight;
+        const dpr = window.devicePixelRatio || 1;
+        el.width = W * dpr; el.height = H * dpr; el.style.width = W + 'px'; el.style.height = H + 'px';
+        ctx = el.getContext('2d'); ctx.scale(dpr, dpr); nodes = [];
+        for (let i = 0; i < 90; i++)nodes.push({ x: rand(0, W), y: rand(0, H), vx: rand(-.22, .22), vy: rand(-.22, .22), r: rand(1.2, 3.5), col: ['#4f9eff', '#3ecf8e', '#a78bfa', '#f7c94b'][i % 4] });
+      }
+      let t = 0;
+      function draw() {
+        ctx.clearRect(0, 0, W, H); t += .008;
+        const g = ctx.createRadialGradient(W * .5, H * .4, 0, W * .5, H * .4, H);
+        g.addColorStop(0, 'rgba(10,18,38,0.92)'); g.addColorStop(1, 'rgba(8,12,20,0.98)');
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        nodes.forEach(n => { n.x += n.vx; n.y += n.vy; if (n.x < 0 || n.x > W) n.vx *= -1; if (n.y < 0 || n.y > H) n.vy *= -1; });
+        for (let i = 0; i < nodes.length; i++)for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y, d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 130) { ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.strokeStyle = `rgba(79,158,255,${(1 - d / 130) * .11})`; ctx.lineWidth = .5; ctx.stroke(); }
+        }
+        nodes.forEach((n, i) => { const p = .5 + .5 * Math.sin(t * 1.8 + i); ctx.beginPath(); ctx.arc(n.x, n.y, n.r * (0.8 + 0.4 * p), 0, PI2); ctx.fillStyle = n.col; ctx.globalAlpha = .32 + .38 * p; ctx.fill(); ctx.globalAlpha = 1; });
+        for (let k = 0; k < 6; k++) { const pf = ((t * .4 + k * .17) % 1); const a = nodes[(k * 11) % nodes.length], b = nodes[(k * 11 + 17) % nodes.length]; const px = lerp(a.x, b.x, pf), py = lerp(a.y, b.y, pf); ctx.beginPath(); ctx.arc(px, py, 3.5, 0, PI2); ctx.fillStyle = '#fff'; ctx.globalAlpha = .6; ctx.fill(); ctx.globalAlpha = 1; }
+        requestAnimationFrame(draw);
+      }
+      setup(); window.addEventListener('resize', setup); draw();
+    })();
+
+    // PACKET JOURNEY
+    (function () {
+      const el = document.getElementById('packet-canvas');
+      const dpr = window.devicePixelRatio || 1;
+      let W, H, ctx, hovH = -1;
+      const hops = [
+        { label: 'Your Laptop', sub: '192.168.1.5', col: '#a78bfa' },
+        { label: 'Home Router', sub: 'NAT + DHCP', col: '#5fe0c8' },
+        { label: 'ISP', sub: 'Regional network', col: '#4f9eff' },
+        { label: 'IXP / Backbone', sub: 'BGP routing', col: '#f7c94b' },
+        { label: 'Google Edge', sub: 'Anycast CDN', col: '#3ecf8e' },
+        { label: "Google's Server", sub: '142.250.80.46', col: '#ff6b6b' },
+      ];
+      function setup() { W = el.parentElement.clientWidth; H = 140; el.width = W * dpr; el.height = H * dpr; el.style.width = W + 'px'; el.style.height = H + 'px'; ctx = el.getContext('2d'); ctx.scale(dpr, dpr); }
+      el.addEventListener('mousemove', e => {
+        const rect = el.getBoundingClientRect(), mx = (e.clientX - rect.left), pad = W * .08, sp = (W - pad * 2) / (hops.length - 1);
+        let f = -1; hops.forEach((_, i) => { if (Math.abs(mx - pad - i * sp) < 22) f = i; }); hovH = f;
+        if (f >= 0) { ttip.style.opacity = '1'; ttip.style.left = (e.clientX + 14) + 'px'; ttip.style.top = (e.clientY - 8) + 'px'; ttip.textContent = hopTips[f]; document.body.classList.add('hovering'); }
+        else { ttip.style.opacity = '0'; document.body.classList.remove('hovering'); }
+      });
+      el.addEventListener('mouseleave', () => { hovH = -1; ttip.style.opacity = '0'; document.body.classList.remove('hovering'); });
+      let t = 0, pt = 0, dir = 1;
+      function draw() {
+        ctx.clearRect(0, 0, W, H); t += .014; pt += .005 * dir; if (pt > 1) dir = -1; if (pt < 0) dir = 1;
+        const pad = W * .08, sp = (W - pad * 2) / (hops.length - 1), ny = H * .55;
+        ctx.beginPath(); ctx.moveTo(pad, ny); ctx.lineTo(W - pad, ny); ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 3; ctx.stroke();
+        const si = clamp(Math.floor(pt * (hops.length - 1)), 0, hops.length - 2);
+        ctx.beginPath(); ctx.moveTo(pad + si * sp, ny); ctx.lineTo(pad + (si + 1) * sp, ny); ctx.strokeStyle = hops[si].col; ctx.lineWidth = 3; ctx.globalAlpha = .25; ctx.stroke(); ctx.globalAlpha = 1;
+        hops.forEach((h, i) => {
+          const x = pad + i * sp, isH = (i === hovH), r = isH ? 21 : 16, p = .5 + .5 * Math.sin(t * 1.5 + i);
+          const g = ctx.createRadialGradient(x, ny, 0, x, ny, r * 2.5); g.addColorStop(0, h.col + '28'); g.addColorStop(1, 'transparent'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, ny, r * 2.5, 0, PI2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x, ny, r, 0, PI2); ctx.fillStyle = '#0c1220'; ctx.fill(); ctx.strokeStyle = h.col; ctx.lineWidth = isH ? 2 : 1.5; ctx.globalAlpha = isH ? 1 : (.6 + .3 * p); ctx.stroke(); ctx.globalAlpha = 1;
+          ctx.fillStyle = isH ? h.col : 'rgba(255,255,255,0.72)'; ctx.font = `${isH ? '600' : '500'} 11px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(h.label, x, ny - r - 12);
+          ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.font = `300 9px 'DM Sans',sans-serif`; ctx.fillText(h.sub, x, ny - r - 1);
+        });
+        const px = pad + pt * (W - pad * 2);
+        for (let i = 0; i < 28; i++) { const tx = px - dir * (i * 1.5); ctx.beginPath(); ctx.arc(tx, ny, 3 * (1 - i / 28), 0, PI2); ctx.fillStyle = hops[si].col; ctx.globalAlpha = (1 - i / 28) * .35; ctx.fill(); }
+        ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(px, ny, 5.5, 0, PI2); ctx.fillStyle = '#fff'; ctx.shadowColor = hops[si].col; ctx.shadowBlur = 14; ctx.fill(); ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = `400 10px 'DM Mono',monospace`; ctx.textAlign = 'right'; ctx.fillText(`RTT ≈ ${Math.round(32 + Math.sin(t) * 4)}ms`, W - 8, H - 10);
+        requestAnimationFrame(draw);
+      }
+      setup(); window.addEventListener('resize', () => { setup(); }); draw();
+    })();
+
+    // C1 - Decision tree
+    (function () {
+      const el = document.getElementById('c1'); let t = 0;
+      const steps = ['URL Parsing', 'HSTS Check', 'DNS Cache?', 'HTTP Cache?', 'Service Worker?', '→ Network Request'];
+      const cols = ['#a78bfa', '#a78bfa', '#a78bfa', '#a78bfa', '#a78bfa', '#4f9eff'];
+      function draw() {
+        const { ctx, w, h } = sc(el); t += .018;
+        const cyc = Math.floor((t * .25) % (steps.length + 1));
+        const px = 38, py = 24, bw = w - px * 2, bh = (h - py * 2 - steps.length * 8) / steps.length;
+        steps.forEach((s, i) => {
+          const x = px, y = py + i * (bh + 8);
+          const isA = i === cyc % steps.length, isPast = i < cyc % steps.length;
+          if (i < steps.length - 1) { ctx.beginPath(); ctx.moveTo(x + bw / 2, y + bh); ctx.lineTo(x + bw / 2, y + bh + 8); ctx.strokeStyle = isPast ? cols[i] : 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1.5; ctx.stroke(); }
+          rr(ctx, x, y, bw, bh, 7); ctx.fillStyle = isA ? `${cols[i]}20` : isPast ? `${cols[i]}0c` : 'rgba(255,255,255,0.02)'; ctx.fill(); ctx.strokeStyle = isA ? cols[i] : isPast ? cols[i] + '55' : 'rgba(255,255,255,0.06)'; ctx.lineWidth = isA ? 1.5 : .5; ctx.stroke();
+          if (isPast) { ctx.fillStyle = cols[i]; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left'; ctx.globalAlpha = .85; ctx.fillText('✓', x + 12, y + bh / 2 + 4); ctx.globalAlpha = 1; }
+          ctx.fillStyle = isA ? cols[i] : 'rgba(255,255,255,0.2)'; ctx.font = `500 9px 'DM Mono',monospace`; ctx.textAlign = 'left'; ctx.fillText(`0${i + 1}`, x + (isPast ? 32 : 12), y + bh / 2 - 5);
+          ctx.fillStyle = isA ? '#f0f4ff' : `rgba(240,244,255,${isPast ? .48 : .2})`; ctx.font = `${isA ? '600' : '400'} 13px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(s, x + bw / 2, y + bh / 2 + 4.5);
+          if (isA) { const p = .5 + .5 * Math.sin(t * 8); ctx.beginPath(); ctx.arc(x + bw - 16, y + bh / 2, 4 * (0.8 + 0.4 * p), 0, PI2); ctx.fillStyle = cols[i]; ctx.globalAlpha = p; ctx.fill(); ctx.globalAlpha = 1; }
+        });
+        requestAnimationFrame(draw);
+      } draw();
+    })();
+
+    // C2 - DNS tree
+    (function () {
+      const el = document.getElementById('c2'); let t = 0;
+      const nds = [{ l: 'Browser', s: 'cache miss', x: .5, y: .87, c: '#4f9eff' }, { l: 'Resolver', s: '8.8.8.8', x: .5, y: .66, c: '#4f9eff' }, { l: 'Root NS', s: '.', x: .2, y: .41, c: '#a78bfa' }, { l: 'TLD NS', s: '.com', x: .5, y: .41, c: '#a78bfa' }, { l: 'Auth NS', s: 'google', x: .8, y: .41, c: '#a78bfa' }, { l: 'A Record', s: '142.250.80.46', x: .5, y: .15, c: '#f7c94b' }];
+      const edges = [[0, 1], [1, 2], [1, 3], [1, 4], [4, 5]];
+      const ap = [[0, 1], [1, 4], [4, 5]];
+      function draw() {
+        const { ctx, w, h } = sc(el); t += .014;
+        edges.forEach(([a, b]) => { const na = nds[a], nb = nds[b]; ctx.beginPath(); ctx.moveTo(na.x * w, na.y * h); ctx.lineTo(nb.x * w, nb.y * h); ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke(); });
+        const phase = (t * .18) % (ap.length + .5);
+        ap.forEach(([a, b], idx) => {
+          const pf = clamp(phase - idx, 0, 1); if (pf <= 0 || pf >= 1) return;
+          const na = nds[a], nb = nds[b]; const px = lerp(na.x * w, nb.x * w, pf), py = lerp(na.y * h, nb.y * h, pf);
+          ctx.beginPath(); ctx.arc(px, py, 5, 0, PI2); ctx.fillStyle = '#4f9eff'; ctx.shadowColor = '#4f9eff'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
+        });
+        nds.forEach((n, i) => {
+          const x = n.x * w, y = n.y * h, p = .5 + .5 * Math.sin(t * 1.5 + i), r = 21;
+          const g = ctx.createRadialGradient(x, y, 0, x, y, r * 2); g.addColorStop(0, n.c + '26'); g.addColorStop(1, 'transparent'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 2, 0, PI2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x, y, r * (1 + .05 * p), 0, PI2); ctx.strokeStyle = n.c; ctx.lineWidth = 1.2; ctx.globalAlpha = .35 + .45 * p; ctx.stroke(); ctx.globalAlpha = 1;
+          ctx.beginPath(); ctx.arc(x, y, r * .66, 0, PI2); ctx.fillStyle = '#0c1220'; ctx.fill(); ctx.strokeStyle = n.c; ctx.lineWidth = 1; ctx.stroke();
+          ctx.fillStyle = n.c; ctx.font = `600 10.5px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(n.l, x, y + r + 15);
+          ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = `300 9px 'DM Sans',sans-serif`; ctx.fillText(n.s, x, y + r + 27);
+        });
+        requestAnimationFrame(draw);
+      } draw();
+    })();
+
+    // C3 - Physical
+    (function () {
+      const el = document.getElementById('c3'); let t = 0;
+      const hps = [{ l: 'Laptop', c: '#5fe0c8' }, { l: 'Router', c: '#5fe0c8' }, { l: 'ISP', c: '#4f9eff' }, { l: 'IXP', c: '#a78bfa' }, { l: 'Backbone', c: '#f7c94b' }, { l: 'Edge', c: '#3ecf8e' }];
+      function draw() {
+        const { ctx, w, h } = sc(el); t += .014;
+        for (let i = 0; i < 10; i++) { ctx.beginPath(); ctx.moveTo(w / 10 * i, 0); ctx.lineTo(w / 10 * i, h); ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = .5; ctx.stroke(); }
+        const pad = w * .1, sp = (w - pad * 2) / (hps.length - 1);
+        const ys = hps.map((_, i) => h * (0.42 + 0.17 * Math.sin(i * 1.2)));
+        for (let i = 0; i < hps.length - 1; i++) {
+          const x1 = pad + i * sp, x2 = pad + (i + 1) * sp, cy = (ys[i] + ys[i + 1]) / 2 * .72;
+          ctx.beginPath(); ctx.moveTo(x1, ys[i]); ctx.quadraticCurveTo((x1 + x2) / 2, cy, x2, ys[i + 1]); ctx.strokeStyle = 'rgba(95,224,200,0.11)'; ctx.lineWidth = 2; ctx.stroke();
+        }
+        const pf = (t * .14) % 1;
+        for (let i = 0; i < hps.length - 1; i++) {
+          const lt = clamp(pf * (hps.length - 1) - i, 0, 1); if (lt <= 0 || lt >= 1) continue;
+          const x1 = pad + i * sp, x2 = pad + (i + 1) * sp, cy = (ys[i] + ys[i + 1]) / 2 * .72;
+          const px = qbez(x1, (x1 + x2) / 2, x2, lt), py = qbez(ys[i], cy, ys[i + 1], lt);
+          ctx.beginPath(); ctx.arc(px, py, 5.5, 0, PI2); ctx.fillStyle = hps[i].c; ctx.shadowColor = hps[i].c; ctx.shadowBlur = 14; ctx.fill(); ctx.shadowBlur = 0;
+        }
+        hps.forEach((h, i) => {
+          const x = pad + i * sp, y = ys[i], p = .5 + .5 * Math.sin(t * 1.4 + i), r = 15;
+          const g = ctx.createRadialGradient(x, y, 0, x, y, 28); g.addColorStop(0, h.c + '28'); g.addColorStop(1, 'transparent'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 28, 0, PI2); ctx.fill();
+          ctx.beginPath(); ctx.arc(x, y, r, 0, PI2); ctx.fillStyle = '#0c1220'; ctx.fill(); ctx.strokeStyle = h.c; ctx.lineWidth = 1.5; ctx.globalAlpha = .6 + .35 * p; ctx.stroke(); ctx.globalAlpha = 1;
+          ctx.fillStyle = h.c; ctx.font = `600 10.5px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(h.l, x, y + 26);
+        });
+        requestAnimationFrame(draw);
+      } draw();
+    })();
+
+    // C4 - TCP
+    (function () {
+      const el = document.getElementById('c4'); let t = 0;
+      const msgs = [{ l: 'SYN', dir: 1, c: '#ff6b6b', y: .22 }, { l: 'SYN-ACK', dir: -1, c: '#f7c94b', y: .41 }, { l: 'ACK', dir: 1, c: '#ff6b6b', y: .57 }, { l: 'HTTP DATA →', dir: 1, c: '#4f9eff', y: .73 }];
+      function draw() {
+        const { ctx, w, h } = sc(el); t += .014;
+        const phase = (tcpState >= 4) ? tcpState - 1.01 : (t * .18) % (msgs.length + .8);
+        const cx = w * .13, sx = w * .87;
+        ['Client', 'Server'].forEach((lbl, i) => {
+          const x = i === 0 ? cx : sx; ctx.beginPath(); ctx.moveTo(x, h * .07); ctx.lineTo(x, h * .88); ctx.strokeStyle = ['#ff6b6b', '#4f9eff'][i]; ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.globalAlpha = .22; ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+          ctx.fillStyle = ['#ff6b6b', '#4f9eff'][i]; ctx.font = `600 13px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(lbl, x, h * .055);
+        });
+        msgs.forEach((m, i) => {
+          const my = m.y * h, from = m.dir === 1 ? cx : sx, to = m.dir === 1 ? sx : cx;
+          const pf = clamp(phase - i, 0, 1);
+          ctx.beginPath(); ctx.moveTo(from, my); ctx.lineTo(to, my); ctx.strokeStyle = m.c; ctx.lineWidth = 1; ctx.globalAlpha = .09; ctx.stroke(); ctx.globalAlpha = 1;
+          if (pf >= 1) {
+            ctx.beginPath(); ctx.moveTo(from, my); ctx.lineTo(to, my); ctx.strokeStyle = m.c; ctx.lineWidth = 1.5; ctx.globalAlpha = .5; ctx.stroke(); ctx.globalAlpha = 1;
+            const ang = m.dir === 1 ? 0 : Math.PI, ex = m.dir === 1 ? to : from;
+            ctx.beginPath(); ctx.moveTo(ex, my); ctx.lineTo(ex - 11 * Math.cos(ang - .4), my - 11 * Math.sin(ang - .4)); ctx.lineTo(ex - 11 * Math.cos(ang + .4), my - 11 * Math.sin(ang + .4)); ctx.closePath(); ctx.fillStyle = m.c; ctx.fill();
+          }
+          ctx.fillStyle = m.c; ctx.font = `600 11.5px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, pf * 4); ctx.fillText(m.l, (from + to) / 2, my - 10); ctx.globalAlpha = 1;
+          if (pf > 0 && pf < 1) { const px = lerp(from, to, pf); ctx.beginPath(); ctx.arc(px, my, 5.5, 0, PI2); ctx.fillStyle = m.c; ctx.shadowColor = m.c; ctx.shadowBlur = 14; ctx.fill(); ctx.shadowBlur = 0; }
+        });
+        requestAnimationFrame(draw);
+      } draw();
+    })();
+
+    // C5 - TLS
+    (function () {
+      const el = document.getElementById('c5'); let t = 0;
+      const pts = Array.from({ length: 70 }, (_, i) => ({ ang: (i / 70) * PI2, r: rand(52, 108), spd: rand(.003, .011) * (Math.random() > .5 ? 1 : -1), sz: rand(2, 4.5), col: ['#3ecf8e', '#4f9eff', '#a78bfa', '#f7c94b'][i % 4] }));
+      const chain = [{ l: 'Root CA', s: 'OS trust store', y: .2, c: '#f7c94b' }, { l: 'Intermediate CA', s: 'signed by root', y: .46, c: '#a78bfa' }, { l: 'google.com cert', s: 'signed by CA', y: .72, c: '#3ecf8e' }];
+      function draw() {
+        const { ctx, w, h } = sc(el); t += .012;
+        const cx = w * .35, cy = h * .5;
+        [60, 82, 105].forEach((r, i) => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI2); ctx.strokeStyle = ['#3ecf8e', '#4f9eff', '#a78bfa'][i]; ctx.lineWidth = .5; ctx.globalAlpha = .12; ctx.stroke(); ctx.globalAlpha = 1; });
+        pts.forEach(p => { p.ang += p.spd; const x = cx + Math.cos(p.ang) * p.r, y = cy + Math.sin(p.ang) * p.r; ctx.beginPath(); ctx.arc(x, y, p.sz, 0, PI2); ctx.fillStyle = p.col; ctx.globalAlpha = .55; ctx.fill(); ctx.globalAlpha = 1; });
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * .15);
+        rr(ctx, -18, -4, 36, 26, 5); ctx.fillStyle = '#0c1220'; ctx.fill(); ctx.strokeStyle = '#3ecf8e'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, -4, 11, Math.PI, 0); ctx.strokeStyle = '#3ecf8e'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 7, 4.5, 0, PI2); ctx.fillStyle = '#3ecf8e'; ctx.fill(); ctx.restore();
+        const rx = w * .73;
+        chain.forEach((c, i) => {
+          const cy2 = h * c.y;
+          if (i < chain.length - 1) { ctx.beginPath(); ctx.moveTo(rx, cy2 + 20); ctx.lineTo(rx, h * chain[i + 1].y - 20); ctx.strokeStyle = c.c; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.globalAlpha = .28; ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+          rr(ctx, rx - 58, cy2 - 17, 116, 34, 7); ctx.fillStyle = c.c + '10'; ctx.fill(); ctx.strokeStyle = c.c; ctx.lineWidth = 1; ctx.stroke();
+          ctx.fillStyle = c.c; ctx.font = `600 11px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(c.l, rx, cy2 - 1);
+          ctx.fillStyle = 'rgba(255,255,255,0.32)'; ctx.font = `300 9.5px 'DM Sans',sans-serif`; ctx.fillText(c.s, rx, cy2 + 12);
+        });
+        ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.font = `400 9.5px 'DM Mono',monospace`; ctx.textAlign = 'center'; ctx.fillText('TLS 1.3 · ECDHE · AES-256-GCM', cx, h * .87);
+        requestAnimationFrame(draw);
+      } draw();
+    })();
+
+    // C6 - HTTP streams
+    (function () {
+      const el = document.getElementById('c6'); let t = 0;
+      const streams = [{ id: '1', c: '#f7c94b', l: 'HTML' }, { id: '2', c: '#4f9eff', l: 'CSS' }, { id: '3', c: '#3ecf8e', l: 'JS' }, { id: '4', c: '#a78bfa', l: 'IMG' }, { id: '5', c: '#ff6b6b', l: 'API' }];
+      function draw() {
+        const { ctx, w, h } = sc(el); t += .016;
+        const n = streams.length, pad = 34, sh = (h - pad * 2 - 20) / n, pipeX = w * .5, pw = 11;
+        rr(ctx, pipeX - pw, pad + 6, pw * 2, h - pad * 2 - 12, 7); ctx.fillStyle = 'rgba(79,158,255,0.05)'; ctx.fill(); ctx.strokeStyle = 'rgba(79,158,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.save(); ctx.translate(pipeX, h / 2); ctx.rotate(-Math.PI / 2); ctx.fillStyle = 'rgba(79,158,255,0.3)'; ctx.font = `500 8px 'DM Mono',monospace`; ctx.textAlign = 'center'; ctx.fillText('SINGLE TCP CONNECTION', 0, 3); ctx.restore();
+        streams.forEach((s, i) => {
+          const y = pad + 20 + i * sh + sh / 2, pf = ((t * .1 + i * .19) % 1);
+          const cx2 = w * .14, sx = w * .86;
+          ctx.fillStyle = s.c; ctx.font = `600 11px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(`Stream ${s.id}`, cx2, y - 5);
+          ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.font = `300 9.5px 'DM Sans',sans-serif`; ctx.fillText(s.l, cx2, y + 7);
+          ctx.fillStyle = s.c; ctx.font = `600 11px 'DM Sans',sans-serif`; ctx.fillText(`Stream ${s.id}`, sx, y);
+          [cx2 + 28, sx - 28].forEach((lx, side) => { ctx.beginPath(); ctx.moveTo(lx, y); ctx.lineTo(side === 0 ? pipeX - pw : pipeX + pw, y); ctx.strokeStyle = s.c; ctx.lineWidth = 1; ctx.globalAlpha = .18; ctx.stroke(); ctx.globalAlpha = 1; });
+          const fy = pad + 6 + pf * (h - pad * 2 - 12 - 10);
+          rr(ctx, pipeX - pw + 2, fy, pw * 2 - 4, 9, 3); ctx.fillStyle = s.c; ctx.globalAlpha = .75; ctx.fill(); ctx.globalAlpha = 1;
+        });
+        ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.font = `400 9px 'DM Mono',monospace`; ctx.textAlign = 'center'; ctx.fillText('HTTP/2 multiplexing — many streams, one TCP connection', w / 2, h - 8);
+        requestAnimationFrame(draw);
+      } draw();
+    })();
+
+    // C7 - Streaming response
+    (function () {
+      const el = document.getElementById('c7'); let t = 0, pct = 0;
+      const dN = [{ l: 'html', x: .5, y: .42, c: '#fb923c' }, { l: 'head', x: .25, y: .57, c: '#fb923c' }, { l: 'body', x: .75, y: .57, c: '#fb923c' }, { l: 'meta', x: .14, y: .72, c: '#4f9eff' }, { l: 'link', x: .34, y: .72, c: '#4f9eff' }, { l: 'div', x: .6, y: .72, c: '#3ecf8e' }, { l: 'script', x: .85, y: .72, c: '#a78bfa' }, { l: 'h1', x: .55, y: .87, c: '#3ecf8e' }, { l: 'p', x: .7, y: .87, c: '#3ecf8e' }];
+      const edges = [[0, 1], [0, 2], [1, 3], [1, 4], [2, 5], [2, 6], [5, 7], [5, 8]];
+      function draw() {
+        const { ctx, w, h } = sc(el); t += .016; pct = (pct + .22) % 100;
+        const bx = w * .08, bw = w * .84, by = h * .08, bh = 20;
+        rr(ctx, bx, by, bw, bh, 5); ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fill();
+        rr(ctx, bx, by, bw * (pct / 100), bh, 5); ctx.fillStyle = '#fb923c'; ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = `500 10px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(`Streaming HTML… ${Math.round(pct)}%`, w / 2, by - 5);
+        const vis = Math.floor((pct / 100) * dN.length);
+        edges.forEach(([a, b]) => { if (a >= vis || b >= vis) return; ctx.beginPath(); ctx.moveTo(dN[a].x * w, dN[a].y * h); ctx.lineTo(dN[b].x * w, dN[b].y * h); ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.stroke(); });
+        dN.slice(0, vis).forEach(n => {
+          const x = n.x * w, y = n.y * h, r = 13; ctx.beginPath(); ctx.arc(x, y, r, 0, PI2); ctx.fillStyle = '#0c1220'; ctx.fill(); ctx.strokeStyle = n.c; ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.fillStyle = n.c; ctx.font = `600 9px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(n.l, x, y + 3.5);
+        });
+        ctx.fillStyle = 'rgba(255,255,255,0.16)'; ctx.font = `400 9px 'DM Mono',monospace`; ctx.textAlign = 'center'; ctx.fillText('DOM built incrementally as bytes arrive', w / 2, h - 8);
+        requestAnimationFrame(draw);
+      } draw();
+    })();
+
+    // C8 - Render pipeline
+    (function () {
+      const el = document.getElementById('c8'); let t = 0;
+      const stages = [{ l: 'HTML → DOM', c: '#e879f9', t: '~5ms' }, { l: 'CSS → CSSOM', c: '#e879f9', t: '~2ms' }, { l: 'Render Tree', c: '#a78bfa', t: '~1ms' }, { l: 'Layout', c: '#4f9eff', t: '~3ms' }, { l: 'Paint + Composite', c: '#f7c94b', t: '~2ms' }];
+      function draw() {
+        const { ctx, w, h } = sc(el); t += .012;
+        const n = stages.length, pad = 26, bh = (h - pad * 2 - n * 7) / n;
+        stages.forEach((s, i) => {
+          const y = pad + i * (bh + 7), isA = i === renderActive, pp = .5 + .5 * Math.sin(t * 7 + i);
+          rr(ctx, pad, y, w - pad * 2, bh, 7); ctx.fillStyle = isA ? `${s.c}18` : 'rgba(255,255,255,0.02)'; ctx.fill(); ctx.strokeStyle = isA ? s.c : 'rgba(255,255,255,0.07)'; ctx.lineWidth = isA ? 1.5 : .5; ctx.stroke();
+          if (i < n - 1) { ctx.beginPath(); ctx.moveTo(w / 2, y + bh); ctx.lineTo(w / 2, y + bh + 7); ctx.strokeStyle = isA ? s.c : 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1; ctx.stroke(); }
+          ctx.fillStyle = isA ? '#f0f4ff' : 'rgba(240,244,255,0.38)'; ctx.font = `${isA ? '600' : '400'} 13.5px 'DM Sans',sans-serif`; ctx.textAlign = 'center'; ctx.fillText(s.l, w / 2, y + bh / 2 + 4.5);
+          ctx.fillStyle = isA ? s.c : 'rgba(255,255,255,0.17)'; ctx.font = `400 9.5px 'DM Mono',monospace`; ctx.textAlign = 'right'; ctx.fillText(s.t, w - pad - 5, y + bh / 2 + 3.5);
+          if (isA) { ctx.beginPath(); ctx.arc(pad + 13, y + bh / 2, 4 * (0.8 + 0.4 * pp), 0, PI2); ctx.fillStyle = s.c; ctx.globalAlpha = pp; ctx.fill(); ctx.globalAlpha = 1; }
+        });
+        ctx.fillStyle = 'rgba(247,201,75,0.35)'; ctx.font = `400 9px 'DM Mono',monospace`; ctx.textAlign = 'right'; ctx.fillText('16ms budget @ 60fps', w - pad, h - 8);
+        requestAnimationFrame(draw);
+      } draw();
+    })();
+  </script>
+</body>
+
+</html>
